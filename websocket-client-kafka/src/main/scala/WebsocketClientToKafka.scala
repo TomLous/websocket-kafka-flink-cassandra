@@ -31,7 +31,7 @@ object WebsocketClientToKafka extends App{
 
   // Define the Kafka producer
   val producerSettings = ProducerSettings(actorSystem, new ByteArraySerializer, new StringSerializer)
-    .withBootstrapServers(config.getString("websocketClient.kafka.hostPort"))
+    .withBootstrapServers(config.getString("kafka.hostPort"))
 
     Producer.plainSink(producerSettings)
 
@@ -45,7 +45,7 @@ object WebsocketClientToKafka extends App{
       None
   }
     .filter(_.isDefined)
-    .map(message => new ProducerRecord[Array[Byte], String](config.getString("websocketClient.kafka.topic"), message.get))
+    .map(message => new ProducerRecord[Array[Byte], String](config.getString("kafka.topic"), message.get))
     .to(Producer.plainSink(producerSettings))
 
   // Materialize the sink as a flow

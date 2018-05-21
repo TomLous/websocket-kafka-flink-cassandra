@@ -26,8 +26,19 @@ When websocket server & kafka are running we can run the websocket client / kafk
 
 `sbt "project websocket-client-kafka" "run"`
 
+### Cassandra
+
+`docker run --name cassandra  -d cassandra
+
+`
 
 
+
+### Kafka Consumer -> Flink -> Cassandra
+
+Have a kafka consumer to Flink read from the kafka stream and 
+*process the data
+*store the results in cassandra
 
 
 

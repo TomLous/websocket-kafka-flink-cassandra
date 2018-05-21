@@ -10,7 +10,7 @@ val commonDependencies = {
 }
 
 lazy val projectSettings = Seq(
-  scalaVersion := "2.12.6",
+  scalaVersion := "2.11.12",
   fork in Test := true,
   scalacOptions := Seq("-unchecked", "-feature", "-deprecation", "-encoding", "utf8")
 )
@@ -56,5 +56,20 @@ lazy val websocketClientKafka = (
         "ch.qos.logback" % "logback-classic" % "1.2.3",
       ),
     mainClass in Compile := Some("WebsocketClientToKafka")
+  ))
+
+lazy val flinkProcessor = (
+  baseProject("flink-processor")
+    settings (
+    libraryDependencies ++=
+      commonDependencies ++ Seq(
+        "com.typesafe" % "config" % "1.3.2",
+        "org.apache.flink" %% "flink-scala" % "1.4.2",
+        "org.apache.flink" %% "flink-streaming-scala" % "1.4.2",
+        "org.apache.flink" %% "flink-connector-kafka-0.11" % "1.4.2",
+        "com.typesafe.scala-logging" %% "scala-logging" % "3.9.0",
+        "ch.qos.logback" % "logback-classic" % "1.2.3",
+      ),
+    mainClass in Compile := Some("FlinkProcessTopic")
   ))
 

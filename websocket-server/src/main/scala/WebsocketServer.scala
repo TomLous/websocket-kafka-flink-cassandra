@@ -3,7 +3,7 @@ import java.nio.file.Paths
 import java.util.Date
 import java.util.concurrent.atomic.AtomicInteger
 
-import akka.actor.ActorSystem
+import akka.actor.{ActorSystem, Cancellable}
 import akka.http.scaladsl.Http
 import akka.http.scaladsl.model.ws.TextMessage
 import akka.http.scaladsl.model.ws.TextMessage.Strict
@@ -11,7 +11,7 @@ import akka.http.scaladsl.server.Directives._
 import akka.http.scaladsl.settings.ServerSettings
 import akka.io.Inet
 import akka.stream.scaladsl.{FileIO, Framing, Sink, Source}
-import akka.stream.{ActorMaterializer, IOResult}
+import akka.stream.{ActorMaterializer, ActorMaterializerSettings, IOResult}
 import akka.util.ByteString
 import com.typesafe.config.{Config, ConfigFactory}
 import com.typesafe.scalalogging.Logger
@@ -34,7 +34,12 @@ object WebsocketServer extends App {
   // Some general config to get the actor system up and running
   val className = this.getClass.getName.split("\\$").last
   implicit val actorSystem = ActorSystem(className)
-  implicit val materializer = ActorMaterializer()
+
+
+  implicit val materializer = ActorMaterializer(
+    ActorMaterializerSettings(actorSystem)
+      .withDebugLogging(true)
+  )
   implicit val executionContext = actorSystem.dispatcher
   implicit lazy val config: Config = ConfigFactory.load()
   implicit val logger = Logger(className)
@@ -56,15 +61,15 @@ object WebsocketServer extends App {
     FileIO.fromPath(file)
       .via(Framing.delimiter(ByteString("\n"), Int.MaxValue))
 
+
   // map the filesource via a delayed source and convert the csv into JSON
-  val delayedSource: Source[Strict, Future[IOResult]] =
+ val delayedSource: Source[Strict, Future[IOResult]] =
     fileSource
+      .throttle(elements = 1, per = config.getInt("websocketServer.sleepIntervalMs").millis)
       .map { line =>
-        Thread.sleep(config.getInt("websocketServer.sleepIntervalMs"))
         logger.debug(line.utf8String)
         val lineArray = line.utf8String.split(",").map(_.trim)
-        val generatedTime = new Date().toInstant.toEpochMilli - config.getLong("websocketServer.epochDelay") - (math.random() * config.getInt("websocketServer.sleepIntervalMs") / 2).toLong
-
+        val generatedTime = new Date().toInstant.toEpochMilli - config.getLong("websocketServer.epochDelay") - (math.random * config.getInt("websocketServer.sleepIntervalMs") / 2).toLong
         val item = TickerItem(
           generatedTime,
           lineArray(0),
@@ -77,6 +82,7 @@ object WebsocketServer extends App {
         )
         TextMessage(item.toJson.toString())
       }
+
 
   // define a websocket route for clients to connect to and start receiving the stream of ticker items
   def route = path("") {

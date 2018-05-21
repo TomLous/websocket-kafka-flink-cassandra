@@ -22,3 +22,7 @@ docker run -d -p 2181:2181 -p 9092:9092 --env ADVERTISED_HOST=127.0.0.1 --env AD
 sleep 20
 echo "Start Websocket Client -> Kafka"
 sbt "project websocket-client-kafka" run &
+
+sleep 30
+echo "Start Kafka -> Flink"
+sbt "project flink-processor" run &
